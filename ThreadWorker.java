@@ -37,16 +37,16 @@ public class ThreadWorker extends Thread {
             //on verifie quel type de requête c'est
             if(request.startsWith("GET"))
             {
-                //gerer le get
+                requestGET(request);
             } 
             else if(request.startsWith("POST")) {
-                //gerer le post
+                requestPOST(request);
             }
             else if(request.contains("Upgrade: websocket")){
                 //gerer le websocket
             }
             else{
-                //renvoyer une erreur 405 
+                sendError(405, "Method Not Allowed");
             }
         }
         catch(Exception e)
@@ -59,8 +59,8 @@ public class ThreadWorker extends Thread {
     /**
      * fonction qui va lire une requête HTTP
      * @return la requête lue sous forme d'un String
-          * @throws IOException 
-          */
+    * @throws IOException 
+    */
     private String readHTTPrequest() throws IOException {
         byte[] buffer = new byte[1024];
 
@@ -107,10 +107,82 @@ public class ThreadWorker extends Thread {
 
                 body = new String(bodyBuffer,0,totalread);
             }
-            return header + "\r\n\r\n" + body;
-        
-                
+            return header + "\r\n\r\n" + body;     
 
+    }
+
+    /****************** FONCTION DE GESTION DES DIFFERENTES REQUETES  *****************************/
+
+    private void requestGET(String request) throws IOException {
+
+        if( request.contains("GET /")){
+            Redirection();
+        }
+        else if(request.contains("/play.html"))
+        {
+            //renvoyer la page html de play (idealement avec chunk)
+        }
+        else if(request.contains("/leaderboard.html"))
+        {
+            //envoyer la page html du leaderboard (idealement avec chunk)
+        }
+        else {
+            sendError(404, "Not Found");
+        }
+    }
+
+    private void requestPOST(String request) throws IOException {
+
+        String[] requestParts = request.split("\r\n\r\n");
+        String Header = requestParts[0];
+        String Body = "";
+        if(requestParts.length > 1)
+            Body = requestParts[1];
+
+        System.out.println("Header :" + Header);
+        System.out.println("Body :" + Body);
+
+        //ajouter une fonction pour la gestion de la requête post qui va envoyer le nouveau fichier html modifier
+
+        //renvoyer le nouveau fichier html modifer (en chunk)
+
+    }
+
+    private void requestWithWebsocket() throws IOException{
+        WebSocket webSocket = new WebSocket(socket);
+
+        while (true) {
+            String request = webSocket.receive();
+            // faire une fonction pour gerer les requetes
+            String response = "fonction a faire";
+            webSocket.send(response);
+        }
+
+    }
+
+    /**
+     * fonction qui va envoyer la response pour redigirer le client sur la bonne page 
+    */
+    private void Redirection(){
+        responStream.println("HTTP/1.1 303 See Other");
+        responStream.println("location: /play.html");
+        responStream.println("Content-Lenght: 0");
+        responStream.println();
+        responStream.flush();
+
+    }
+
+    /**
+     * fonction qui va envoyer le bon code de retour en cas d'erreur
+     * @param code : code de l'erreur associé
+     * @param message : message explicant l'erreur
+    */
+    private void sendError(int code, String message){
+        responStream.println("HTTP/1.1 "+code+" "+message);
+        responStream.println("Content-Type: text/plain");
+        responStream.println();
+        responStream.println(message);
+        responStream.flush();
     }
 
 }
