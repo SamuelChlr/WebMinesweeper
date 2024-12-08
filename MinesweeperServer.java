@@ -1,0 +1,36 @@
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class MinesweeperServer {
+
+    private static ServerSocket sSocket;
+    private static ExecutorService threadPool;
+
+    public static void main(String[] args){
+
+        try{
+
+            //recupération de du nombre de thread voulu et lancement du pool de thread
+            int poolSize = Integer.parseInt(args[0]);
+
+            threadPool = Executors.newFixedThreadPool(poolSize);
+
+            //boucle d'acceptation de connexion
+            while(true)
+            {
+                Socket cSocket = sSocket.accept();
+
+                threadPool.execute(new ThreadWorker(cSocket));
+            }
+
+        }
+        catch(Exception e)
+        {
+            System.err.println(e);
+        }
+
+    }
+}
