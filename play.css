@@ -1,0 +1,125 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+
+/* Titre du jeu */
+h1 {
+    font-size: 2em;
+    color: #333;
+    margin-top: 20px;
+}
+
+/* Conteneur de la grille */
+.minesweeper {
+    margin: 0 auto;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+/* Cellules de la grille */
+.minesweeper td {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #ccc;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 1.5em;
+    cursor: pointer;
+}
+
+/* Styles pour les différents états des cases */
+.hidden {
+    background-color: #999;
+}
+
+.revealed {
+    background-color: #ddd;
+}
+
+.flag {
+    background-color: #f0f0f0;
+}
+
+.mine {
+    background-color: #f00;
+}
+
+/* Styles supplémentaires pour les icônes */
+.mine img, .flag img {
+    width: 25px;
+    height: 25px;
+}
+
+/* Effet au survol des cellules */
+.minesweeper td:hover {
+    background-color: #e0e0e0;
+}
+
+/* Empêcher l'interaction avec les cases déjà révélées */
+.minesweeper td.revealed,
+.minesweeper td.flag {
+    pointer-events: none;
+}
+
+/* Grille cachée au début */
+.hidden {
+    background-color: #bbb;
+}
+
+/* Pour centrer les icônes dans les cases */
+img {
+    display: block;
+    margin: 0 auto;
+}
+
+/* Styles pour les bords de la grille et les couleurs de fond */
+table {
+    border: 2px solid #333;
+    border-radius: 8px;
+}
+
+/* Boutons (comme celui pour donner up) */
+button, .button {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover, .button:hover {
+    background-color: #45a049;
+}
+
+/* Styles pour les cases révélées */
+.revealed {
+    font-weight: bold;
+    color: #333;
+}
+
+.revealed:empty {
+    background-color: #fff;
+}
+
+/* Styles pour la grille et l'affichage de la page */
+.minesweeper td {
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.hidden {
+    background-color: #bbb;
+}
+
+/* Ajouter des effets visuels pour les actions */
+.minesweeper td.clicked {
+    background-color: #fff;
+}

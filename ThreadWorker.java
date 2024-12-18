@@ -1,4 +1,6 @@
 import java.net.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.io.*;
 import java.util.*;
 
@@ -183,6 +185,8 @@ public class ThreadWorker extends Thread {
         session.getDuration(); // mettre à jour la durée
         //ajouter une fonction pour la gestion de la requête post qui va envoyer le nouveau fichier html modifier
 
+
+
         //renvoyer le nouveau fichier html modifer (en chunk)
 
     }
@@ -206,8 +210,13 @@ public class ThreadWorker extends Thread {
     }*/ //poura etre utile si le header arrive séparément du body
 
 
-    private void requestWithWebsocket(String request1) throws IOException{
+    /********************** WEBSOCKET 
+         * @throws NoSuchAlgorithmException *********************************/
+    
+        private void requestWithWebsocket(String request1) throws IOException, NoSuchAlgorithmException{
         WebSocket webSocket = new WebSocket(socket);
+
+        WebSocketHanshake(request1);
 
         //gestion des cookies pour la session
         String sessionId = readCookies(request1, "SESSID");
@@ -224,15 +233,74 @@ public class ThreadWorker extends Thread {
         }
 
         session.getDuration(); // mettre à jour la durée
-        while (true) {
-            String request = webSocket.receive();
-            
-            // faire une fonction pour gerer les requetes
-            String response = "fonction a faire";
-            session.getDuration();
-            webSocket.send(response);
+
+        try{
+            while (true) {
+                String request = webSocket.receive();
+                
+                // faire une fonction pour gerer les requetes
+                String response = HandleWebSocketMessage(request, session);
+                session.getDuration();
+                webSocket.send(response);
+            }
+        } 
+        catch(Exception e) {
+            System.err.println("Erreur des echanges webSocket:" + e);
         }
 
+    }
+
+    private void WebSocketHanshake(String request) throws NoSuchAlgorithmException, UnsupportedEncodingException{
+
+        String webSocketKeyClient = null;
+
+        //on recherche la clé du client 
+        for(String line : request.split("\r\n")){
+            if(line.startsWith("Sec-WebSocket-key:")){
+                webSocketKeyClient = line.substring(19).trim();
+                break;
+            }
+        }
+
+        if(webSocketKeyClient == null ) {
+            sendError(400, "No Sec-WebSocket-Key from the Client");
+        }
+
+        String partKey = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+
+        String webSocketKeyServer = Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-1").digest((webSocketKeyClient + partKey).getBytes("UTF-8")));
+
+        //reponse au hanshake
+        responStream.println("HTTP/1.1 101 Switching Protocols");
+        responStream.println("Connection: Upgrade");
+        responStream.println("Upgrade: websocket");
+        responStream.println("Sec-WebSocket-Accept: "+ webSocketKeyServer );
+        responStream.println();
+        responStream.flush();
+    }
+
+    private String HandleWebSocketMessage(String request, Session session){
+        if(request.startsWith("TRY")) {
+            return TRY(request, session);
+        }
+        else if( request.startsWith("FLAG")){
+            if(session.getIsInitialized())
+                return FLAG(request, session);
+            else
+                return "WRONG: la partie n'a pas encore commence";
+        }
+        else {
+            return "Erreur: Commande WebSocket non reconnue";
+        }
+
+    }
+
+    private String TRY(String request, Session session){
+        return "";
+    }
+
+    private String FLAG(String request, Session session) {
+        return "";
     }
 
 
