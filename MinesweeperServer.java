@@ -15,7 +15,7 @@ public class MinesweeperServer {
 
             //recupération de du nombre de thread voulu et lancement du pool de thread
             int poolSize = Integer.parseInt(args[0]);
-
+            sSocket = new ServerSocket(8014);
             threadPool = Executors.newFixedThreadPool(poolSize);
 
             //boucle d'acceptation de connexion

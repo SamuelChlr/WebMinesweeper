@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Leaderboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        ol {
+            list-style-type: decimal;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            background-color: #e0e0e0;
+            margin: 5px;
+            padding: 10px;
+            font-size: 18px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .player {
+            font-weight: bold;
+        }
+
+        .time {
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Minesweeper leadeboard</h1>
+
+    <ol id="player-list">
+        <!-- Liste dynamique des joueurs -->
+    </ol>
+    <!-- script copier d internet a adapter pour notre projet-->
+    <script>
+        
+
+        // Fonction pour générer la liste des joueurs
+        function displayPlayerList(players) {
+            const playerList = document.getElementById('player-list');
+            players.forEach(player => {
+                const listItem = document.createElement('li');
+                const playerName = player.name ? player.name : 'Anonyme';
+                listItem.innerHTML = `<span class="player">${playerName}</span> - <span class="time">${player.time}</span>`;
+                playerList.appendChild(listItem);
+            });
+        }
+
+        // Appeler la fonction pour afficher la liste
+        displayPlayerList(players);
+    </script>
+
+</body>
+</html>

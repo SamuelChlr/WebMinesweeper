@@ -43,7 +43,7 @@ public class ThreadWorker extends Thread {
                 requestPOST(request);
             }
             else if(request.contains("Upgrade: websocket")){
-                //gerer le websocket
+                requestWithWebsocket(request);
             }
             else{
                 sendError(405, "Method Not Allowed");
@@ -115,6 +115,23 @@ public class ThreadWorker extends Thread {
 
     private void requestGET(String request) throws IOException {
 
+        String sessionId = readCookies(request, "SESSID");
+        Session session;
+
+        if(sessionId == null || !SessionManager.sessionExists(sessionId)) { // on vérifie s'il y a une session déjà connue 
+            //si elle n'existe pas on en crée une
+            sessionId = SessionManager.createSession();
+            session = SessionManager.getSession(sessionId);
+            sendCookie(sessionId);
+            System.out.println("Nouvelle session crée avec succès. SESSID: " + sessionId);
+        }
+        else {
+            session = SessionManager.getSession(sessionId);
+            System.out.println("Session en cours, SESSID: " + sessionId);
+        }
+        
+        session.getDuration(); // mettre à jour la durée
+
         if( request.contains("GET /")){
             Redirection();
         }
@@ -131,6 +148,7 @@ public class ThreadWorker extends Thread {
         }
     }
 
+    /************************ POST ***************$*/
     private void requestPOST(String request) throws IOException {
 
         String[] requestParts = request.split("\r\n\r\n");
@@ -138,27 +156,85 @@ public class ThreadWorker extends Thread {
         String Body = "";
         if(requestParts.length > 1)
             Body = requestParts[1];
+        /* 
+         else {
+            // Lire le corps si non inclus dans "request" (requis si le header arrive séparément)
+            body = readRequestBody(reader, header);
+        }
+        */
 
         System.out.println("Header :" + Header);
         System.out.println("Body :" + Body);
 
+        //gestion des cookies pour la session
+        String sessionId = readCookies(Header, "SESSID");
+        Session session;
+
+        if (sessionId == null || !SessionManager.sessionExists(sessionId)) {
+            sessionId = SessionManager.createSession();
+            session = SessionManager.getSession(sessionId);
+            sendCookie(sessionId);
+            System.out.println("Nouvelle session créée : " + sessionId);
+        } else {
+            session = SessionManager.getSession(sessionId);
+            System.out.println("Session existante : " + sessionId);
+        }
+
+        session.getDuration(); // mettre à jour la durée
         //ajouter une fonction pour la gestion de la requête post qui va envoyer le nouveau fichier html modifier
 
         //renvoyer le nouveau fichier html modifer (en chunk)
 
     }
 
-    private void requestWithWebsocket() throws IOException{
+    /*// Lire le corps de la requête POST si nécessaire
+    private String readRequestBody(BufferedReader reader, String header) throws IOException {
+        int contentLength = getContentLength(header);
+        char[] buffer = new char[contentLength];
+        reader.read(buffer, 0, contentLength);
+        return new String(buffer);
+    }
+
+    // Extraire Content-Length depuis l'en-tête
+    private int getContentLength(String header) {
+        for (String line : header.split("\r\n")) {
+            if (line.startsWith("Content-Length:")) {
+                return Integer.parseInt(line.substring(15).trim());
+            }
+        }
+        return 0;
+    }*/ //poura etre utile si le header arrive séparément du body
+
+
+    private void requestWithWebsocket(String request1) throws IOException{
         WebSocket webSocket = new WebSocket(socket);
 
+        //gestion des cookies pour la session
+        String sessionId = readCookies(request1, "SESSID");
+        Session session;
+
+        if (sessionId == null || !SessionManager.sessionExists(sessionId)) {
+            sessionId = SessionManager.createSession();
+            session = SessionManager.getSession(sessionId);
+            sendCookie(sessionId);
+            System.out.println("Nouvelle session créée : " + sessionId);
+        } else {
+            session = SessionManager.getSession(sessionId);
+            System.out.println("Session existante : " + sessionId);
+        }
+
+        session.getDuration(); // mettre à jour la durée
         while (true) {
             String request = webSocket.receive();
+            
             // faire une fonction pour gerer les requetes
             String response = "fonction a faire";
+            session.getDuration();
             webSocket.send(response);
         }
 
     }
+
 
     /**
      * fonction qui va envoyer la response pour redigirer le client sur la bonne page 
@@ -185,4 +261,39 @@ public class ThreadWorker extends Thread {
         responStream.flush();
     }
 
+
+    /********************************* GESTION DES COOKIES DE SESSION *************************************/
+
+    /**
+     * fonction qui extrait le SESSID des cookies d'une requête
+     * @param request    : chaine de caractères contenant la requête reçue
+     * @param cookieName : pour rechercher un cookie en particulier ( exemple SESSID)
+     * @return           : la valeur du cookie recherché ou null s'il n'est pas trouvé
+    */
+    private String readCookies(String request, String cookieName) {
+        for (String line : request.split("\r\n")) {
+            if (line.startsWith("Cookie:")) {
+                String[] cookies = line.substring(7).split("; ");
+                for (String cookie : cookies) {
+                    String[] parts = cookie.split("=");
+                    if (parts.length == 2 && parts[0].equals(cookieName)) {
+                        return parts[1];
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+
+    /**
+     * fonction qui envoie le SESSID au client
+     * @param request    : un string contenant le SESSID
+    */
+    private void sendCookie(String sessionId) {
+        responStream.println("HTTP/1.1 200 OK");
+        responStream.println("Set-Cookie: SESSID=" + sessionId + "; Path=/; Max-Age=600");
+        responStream.println();
+        responStream.flush();
+    }
 }
