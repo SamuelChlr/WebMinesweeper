@@ -18,7 +18,7 @@ public class MinesweeperHTML{
         htmlcode = "";
     }
     //generate the html code without
-    public void generateHTML(PrintWriter serverWriter, boolean acceptGZIP) throws IOException
+    /*public void generateHTML(PrintWriter serverWriter, boolean acceptGZIP) throws IOException
 	{
 		byte byteArray[];
 		String htmlCode,tmp;
@@ -41,17 +41,18 @@ public class MinesweeperHTML{
 		
 		
 
-	} 
+	} */
     //generate the html code for a post avec JS
     public void generateHTML(OutputStream serverWriter, Session session, boolean acceptGZIP) throws IOException
 	{
 		byte byteArray[];
 		String htmlCode,tmp;
+		String username = session.getPlayerName();
 		System.out.println("debut génération");
 
 		
 			System.out.println("debut generation");
-			htmlCode = getHeaders() + getBody();
+			htmlCode = getHeaders() + getBody(username);
 			sendChunkedResponse(serverWriter, htmlCode);
 			System.out.println("fin envoie");
 			
@@ -110,10 +111,10 @@ public class MinesweeperHTML{
 	}
 
 
-	public String getBody()
+	public String getBody(String username)
 	{
 		return	"	<body>\n" +
-				"		<h1 style=\"text-align: center;\">Minesweeper</h1>\n" +
+				"		<h1 style=\"text-align: center;\">Minesweeper "+ username +" </h1>\n" +
 				"		<div id=\"username-form\">\n" +
 				"			<form action=\"/play.html/setUsername\" method=\"POST\">\n" +
 				"				<label for=\"username\">Enter your username:</label>\n"+

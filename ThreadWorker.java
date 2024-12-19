@@ -90,35 +90,35 @@ public class ThreadWorker extends Thread {
             String header = requestBuilder.toString();
             
             //on verifie que ce n'est pas une requête POST avec un body
-            int contentLenght = 0;
-            if(header.contains("Content-Lenght:"))
-            {
-                //on extrait la taille du body
-                int start = header.indexOf("Content-Length:") + "Conten-Lenght:".length(); 
-                int end = header.indexOf("\r\n", start);
-                contentLenght = Integer.parseInt(header.substring(start, end).trim());
+            int contentLength = 0;
+            String[] lines = header.split("\r\n");
+            for (String line : lines) {
+                if (line.startsWith("Content-Length:")) {
+                    String value = line.substring("Content-Length:".length()).trim();
+                    try {
+                        contentLength = Integer.parseInt(value);
+                    } catch (NumberFormatException e) {
+                        System.err.println("Erreur : Content-Length invalide -> " + value);
+                    }
+                }
             }
+
 
             //on va lire le body s'il y a en a un
-            StringBuilder requestBodyBuilder = new StringBuilder();
+            //StringBuilder requestBodyBuilder = new StringBuilder();
             String body = "";
-            if(contentLenght >0)
-            {
-                int totalread = 0;
-                byte[] bodyBuffer = new byte[contentLenght];
-                while (totalread < contentLenght) {
-                    int len2 = requestStream.read(bodyBuffer,totalread,contentLenght-totalread);
-                    
-                    if(len2 == -1)
-                        break;
-                    
-                    totalread +=len2;
-                    
+            
+            if (contentLength > 0) {
+                int totalRead = 0;
+                byte[] bodyBuffer = new byte[contentLength];
+                while (totalRead < contentLength) {
+                    int len2 = requestStream.read(bodyBuffer, totalRead, contentLength - totalRead);
+                    if (len2 == -1) break;
+                    totalRead += len2;
                 }
-
-                body = new String(bodyBuffer,0,totalread);
-                
+                body = new String(bodyBuffer, 0, totalRead);
             }
+            
            
             return header + "\r\n\r\n" + body;     
 
@@ -132,7 +132,7 @@ public class ThreadWorker extends Thread {
         String sessionId = readCookies(request, "SESSID");
         Session session;
         Boolean NewSession = false;
-        System.out.println("je suis dans le GET");
+        System.out.println("je suis dans le GET : " + sessionId);
 
         if(sessionId == null || !SessionManager.sessionExists(sessionId)) { // on vérifie s'il y a une session déjà connue 
             //si elle n'existe pas on en crée une
@@ -210,6 +210,7 @@ public class ThreadWorker extends Thread {
         //gestion des cookies pour la session
         String sessionId = readCookies(Header, "SESSID");
         Session session;
+        
 
         if (sessionId == null || !SessionManager.sessionExists(sessionId)) {
             sessionId = SessionManager.createSession();
@@ -223,12 +224,15 @@ public class ThreadWorker extends Thread {
 
         session.getDuration(); // mettre à jour la durée
         
-        if(request.startsWith("POST /play.html/setUsername")){
+        if(request.startsWith("POST /play.html")){ 
 
             if(Body.contains("username=")){
                 int index = Body.indexOf("=");
                 String username = Body.substring(index +1);
-
+                System.out.println("POST 1 SESSID:" + session.getSessionId() + " username :" + username);
+                session.setPlayerName(username);
+                Redirection();
+                
 
             }
             else
@@ -239,29 +243,8 @@ public class ThreadWorker extends Thread {
 
         }
 
-
-
-        //renvoyer le nouveau fichier html modifer (en chunk)
-
     }
 
-    /*// Lire le corps de la requête POST si nécessaire
-    private String readRequestBody(BufferedReader reader, String header) throws IOException {
-        int contentLength = getContentLength(header);
-        char[] buffer = new char[contentLength];
-        reader.read(buffer, 0, contentLength);
-        return new String(buffer);
-    }
-
-    // Extraire Content-Length depuis l'en-tête
-    private int getContentLength(String header) {
-        for (String line : header.split("\r\n")) {
-            if (line.startsWith("Content-Length:")) {
-                return Integer.parseInt(line.substring(15).trim());
-            }
-        }
-        return 0;
-    }*/ //poura etre utile si le header arrive séparément du body
 
 
     /********************** WEBSOCKET 
@@ -362,11 +345,13 @@ public class ThreadWorker extends Thread {
      * fonction qui va envoyer la response pour redigirer le client sur la bonne page 
     */
     private void Redirection(){
-        responStream.println("HTTP/1.1 303 See Other");
-        responStream.println("location: /play.html");
-        responStream.println("Content-Lenght: 0");
-        responStream.println();
-        responStream.flush();
+        System.out.println("!!! REDIRECTION !!!");
+
+        String headers = "HTTP/1.1 303 See Other\r\n" +
+                            "location: /play.html\r\n" +
+                            "Content-Lenght: 0\r\n\r\n";
+                responStream.write(headers);
+                responStream.flush();
 
     }
 
@@ -393,19 +378,22 @@ public class ThreadWorker extends Thread {
      * @return           : la valeur du cookie recherché ou null s'il n'est pas trouvé
     */
     private String readCookies(String request, String cookieName) {
+       
         for (String line : request.split("\r\n")) {
-            if (line.startsWith("Cookie:")) {
-                String[] cookies = line.substring(7).split("; ");
+            if (line.toLowerCase().startsWith("cookie:")) {
+                // Extraire tous les cookies
+                String[] cookies = line.substring(7).split(";");
                 for (String cookie : cookies) {
-                    String[] parts = cookie.split("=");
-                    if (parts.length == 2 && parts[0].equals(cookieName)) {
-                        return parts[1];
+                    String[] parts = cookie.trim().split("=", 2);
+                    if (parts.length == 2 && parts[0].trim().equals(cookieName)) {
+                        return parts[1].trim(); 
                     }
                 }
             }
         }
         return null;
     }
+    
 
 
     /**
