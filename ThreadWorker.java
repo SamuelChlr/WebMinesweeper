@@ -29,6 +29,7 @@ public class ThreadWorker extends Thread {
 
         try{
             String request = readHTTPrequest();
+            MinesweeperHTML htmlGenerator = new MinesweeperHTML();
 
             if(request == null || request.isEmpty())
                 return;
@@ -39,9 +40,10 @@ public class ThreadWorker extends Thread {
             //on verifie quel type de requête c'est
             if(request.startsWith("GET"))
             {
-                requestGET(request);
+                requestGET(request,htmlGenerator);
             } 
             else if(request.startsWith("POST")) {
+                System.out.println("debut POST");
                 requestPOST(request);
             }
             else if(request.contains("Upgrade: websocket")){
@@ -54,6 +56,13 @@ public class ThreadWorker extends Thread {
         catch(Exception e)
         {
             System.err.println(e);
+        }
+        responStream.close();
+        try {
+            socket.close();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
 
     }
@@ -69,9 +78,9 @@ public class ThreadWorker extends Thread {
         StringBuilder requestBuilder = new StringBuilder();
         int len;
 
-        
+            
             //lecture de la requête ou de l'entête en cas de requête POST
-            while ((len = requestStream.read(buffer)) != 1) {
+            while ((len = requestStream.read(buffer)) != -1) {
                 requestBuilder.append(new String(buffer, 0, len));
 
                 if(requestBuilder.length() >= 4 && requestBuilder.substring(requestBuilder.length() -4).equals("\r\n\r\n"))
@@ -79,13 +88,13 @@ public class ThreadWorker extends Thread {
             }
 
             String header = requestBuilder.toString();
-
+            
             //on verifie que ce n'est pas une requête POST avec un body
             int contentLenght = 0;
             if(header.contains("Content-Lenght:"))
             {
                 //on extrait la taille du body
-                int start = header.indexOf("Content-Lenght:") + "Conten-Lenght:".length(); 
+                int start = header.indexOf("Content-Length:") + "Conten-Lenght:".length(); 
                 int end = header.indexOf("\r\n", start);
                 contentLenght = Integer.parseInt(header.substring(start, end).trim());
             }
@@ -108,44 +117,73 @@ public class ThreadWorker extends Thread {
                 }
 
                 body = new String(bodyBuffer,0,totalread);
+                
             }
+           
             return header + "\r\n\r\n" + body;     
 
     }
 
     /****************** FONCTION DE GESTION DES DIFFERENTES REQUETES  *****************************/
 
-    private void requestGET(String request) throws IOException {
+    private void requestGET(String request, MinesweeperHTML htmlGenerator) throws IOException {
 
+        
         String sessionId = readCookies(request, "SESSID");
         Session session;
+        Boolean NewSession = false;
+        System.out.println("je suis dans le GET");
 
         if(sessionId == null || !SessionManager.sessionExists(sessionId)) { // on vérifie s'il y a une session déjà connue 
             //si elle n'existe pas on en crée une
             sessionId = SessionManager.createSession();
             session = SessionManager.getSession(sessionId);
-            sendCookie(sessionId);
+            NewSession = true;
             System.out.println("Nouvelle session crée avec succès. SESSID: " + sessionId);
         }
         else {
             session = SessionManager.getSession(sessionId);
             System.out.println("Session en cours, SESSID: " + sessionId);
         }
-        
+        System.out.println("test 1");
         session.getDuration(); // mettre à jour la durée
-
-        if( request.contains("GET /")){
+        System.out.println("TEST 2");
+        if( request.contains("GET / ")){
+            System.out.println("TEST 3");
             Redirection();
         }
-        else if(request.contains("/play.html"))
+        else if(request.startsWith("GET /play.html"))
         {
+            
+            System.out.println("requete GET vers play.html");
             //renvoyer la page html de play (idealement avec chunk)
+            
+            Boolean acceptGZIP = request.contains("Accept-Encoding: gzip");
+            if(NewSession){
+                String headers = "HTTP/1.1 200 OK\r\n" +
+                            "Connection: close\r\n" +
+                            "Content-Type: text/html; charset=UTF-8\r\n" +
+                            "Set-Cookie: SESSID=" + sessionId + "; Path=/; Max-Age=600\r\n" +
+                            "Transfer-Encoding: chunked\r\n\r\n";
+                responStream.write(headers);
+            }
+            else {
+                String headers = "HTTP/1.1 200 OK\r\n" +
+                            "Connection: close\r\n" +
+                            "Content-Type: text/html; charset=UTF-8\r\n" +
+                            "Transfer-Encoding: chunked\r\n\r\n";
+                responStream.write(headers);
+            }
+            responStream.flush();
+            htmlGenerator.generateHTML(socket.getOutputStream(),session, acceptGZIP);
         }
         else if(request.contains("/leaderboard.html"))
         {
             //envoyer la page html du leaderboard (idealement avec chunk)
+            System.out.println("TEST 4");
         }
         else {
+            System.out.println("TEST 5");
             sendError(404, "Not Found");
         }
     }
@@ -153,6 +191,7 @@ public class ThreadWorker extends Thread {
     /************************ POST ***************$*/
     private void requestPOST(String request) throws IOException {
 
+        
         String[] requestParts = request.split("\r\n\r\n");
         String Header = requestParts[0];
         String Body = "";
@@ -175,7 +214,7 @@ public class ThreadWorker extends Thread {
         if (sessionId == null || !SessionManager.sessionExists(sessionId)) {
             sessionId = SessionManager.createSession();
             session = SessionManager.getSession(sessionId);
-            sendCookie(sessionId);
+            //sendCookie(sessionId);
             System.out.println("Nouvelle session créée : " + sessionId);
         } else {
             session = SessionManager.getSession(sessionId);
@@ -183,7 +222,22 @@ public class ThreadWorker extends Thread {
         }
 
         session.getDuration(); // mettre à jour la durée
-        //ajouter une fonction pour la gestion de la requête post qui va envoyer le nouveau fichier html modifier
+        
+        if(request.startsWith("POST /play.html/setUsername")){
+
+            if(Body.contains("username=")){
+                int index = Body.indexOf("=");
+                String username = Body.substring(index +1);
+
+
+            }
+            else
+            {
+                System.out.println("erreur post username");
+                //renvoyer une erreur
+            }
+
+        }
 
 
 
@@ -359,9 +413,9 @@ public class ThreadWorker extends Thread {
      * @param request    : un string contenant le SESSID
     */
     private void sendCookie(String sessionId) {
-        responStream.println("HTTP/1.1 200 OK");
-        responStream.println("Set-Cookie: SESSID=" + sessionId + "; Path=/; Max-Age=600");
-        responStream.println();
+        responStream.println("HTTP/1.1 200 OK\r\n");
+        responStream.println("Set-Cookie: SESSID=" + sessionId + "; Path=/; Max-Age=600\r\n");
+        responStream.println("\r\n");
         responStream.flush();
     }
 }

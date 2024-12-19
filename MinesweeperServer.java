@@ -17,12 +17,12 @@ public class MinesweeperServer {
             int poolSize = Integer.parseInt(args[0]);
             sSocket = new ServerSocket(8014);
             threadPool = Executors.newFixedThreadPool(poolSize);
-
+            System.out.println("Serveur lancé");
             //boucle d'acceptation de connexion
             while(true)
             {
                 Socket cSocket = sSocket.accept();
-
+                System.out.println("Connexion acceptée");
                 threadPool.execute(new ThreadWorker(cSocket));
             }
 

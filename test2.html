@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset='utf-8'>
+        <title>Minesweeper</title>
+        <style>
+            body {    font-family: Arial, sans-serif;    background-color: #f0f0f0;    margin: 0;    padding: 0;    text-align: center;}h1 {    font-size: 2em;    color: #333;    margin-top: 20px;}.minesweeper {    margin: 0 auto;    border-collapse: collapse;    margin-top: 20px;}.minesweeper td {    width: 40px;    height: 40px;    border: 1px solid #ccc;    text-align: center;    vertical-align: middle;    font-size: 1.5em;    cursor: pointer;}.hidden {    background-color: #999;}.revealed {    background-color: #ddd;}.flag {    background-color: #f0f0f0;}.mine {    background-color: #f00;}.mine img, .flag img {    width: 25px;    height: 25px;}.minesweeper td:hover {    background-color: #e0e0e0;}.minesweeper td.revealed,.minesweeper td.flag {    pointer-events: none;}.hidden {    background-color: #bbb;}img {    display: block;    margin: 0 auto;}table {    border: 2px solid #333;    border-radius: 8px;}button, .button {    padding: 10px 20px;    background-color: #4CAF50;    color: white;    border: none;    border-radius: 5px;    font-size: 16px;    cursor: pointer;}button:hover, .button:hover {    background-color: #45a049;}.revealed {    font-weight: bold;    color: #333;}.revealed:empty {    background-color: #fff;}.minesweeper td {    width: 40px;    height: 40px;    text-align: center;    vertical-align: middle;}.hidden {    background-color: #bbb;}.minesweeper td.clicked {    background-color: #fff;}
+        </style>
+    </head>
+    <body>
+        <h1 style="text-align: center;">Minesweeper</h1>
+        <div id="playerName">
+                <table class="minesweeper">
+                    <tr>
+                        <td id="cell_0_0" class="hidden" onclick="handleLeftClick('cell_0_0')" oncontextmenu="handleRightClick(event, 'cell_0_0')"></td>
+                        <td id="cell_0_1" class="hidden" onclick="handleLeftClick('cell_0_1')" oncontextmenu="handleRightClick(event, 'cell_0_1')"></td>
+                        <td id="cell_0_2" class="hidden" onclick="handleLeftClick('cell_0_2')" oncontextmenu="handleRightClick(event, 'cell_0_2')"></td>
+                        <td id="cell_0_3" class="hidden" onclick="handleLeftClick('cell_0_3')" oncontextmenu="handleRightClick(event, 'cell_0_3')"></td>
+                        <td id="cell_0_4" class="hidden" onclick="handleLeftClick('cell_0_4')" oncontextmenu="handleRightClick(event, 'cell_0_4')"></td>
+                        <td id="cell_0_5" class="hidden" onclick="handleLeftClick('cell_0_5')" oncontextmenu="handleRightClick(event, 'cell_0_5')"></td>
+                        <td id="cell_0_6" class="hidden" onclick="handleLeftClick('cell_0_6')" oncontextmenu="handleRightClick(event, 'cell_0_6')"></td>
+                    </tr>
+                    <tr>
+                        <td id="cell_1_0" class="hidden" onclick="handleLeftClick('cell_1_0')" oncontextmenu="handleRightClick(event, 'cell_1_0')"></td>
+                        <td id="cell_1_1" class="hidden" onclick="handleLeftClick('cell_1_1')" oncontextmenu="handleRightClick(event, 'cell_1_1')"></td>
+                        <td id="cell_1_2" class="hidden" onclick="handleLeftClick('cell_1_2')" oncontextmenu="handleRightClick(event, 'cell_1_2')"></td>
+                        <td id="cell_1_3" class="hidden" onclick="handleLeftClick('cell_1_3')" oncontextmenu="handleRightClick(event, 'cell_1_3')"></td>
+                        <td id="cell_1_4" class="hidden" onclick="handleLeftClick('cell_1_4')" oncontextmenu="handleRightClick(event, 'cell_1_4')"></td>
+                        <td id="cell_1_5" class="hidden" onclick="handleLeftClick('cell_1_5')" oncontextmenu="handleRightClick(event, 'cell_1_5')"></td>
+                        <td id="cell_1_6" class="hidden" onclick="handleLeftClick('cell_1_6')" oncontextmenu="handleRightClick(event, 'cell_1_6')"></td>
+                    </tr>
+                    <tr>
+                        <td id="cell_2_0" class="hidden" onclick="handleLeftClick('cell_2_0')" oncontextmenu="handleRightClick(event, 'cell_2_0')"></td>
+                        <td id="cell_2_1" class="hidden" onclick="handleLeftClick('cell_2_1')" oncontextmenu="handleRightClick(event, 'cell_2_1')"></td>
+                        <td id="cell_2_2" class="hidden" onclick="handleLeftClick('cell_2_2')" oncontextmenu="handleRightClick(event, 'cell_2_2')"></td>
+                        <td id="cell_2_3" class="hidden" onclick="handleLeftClick('cell_2_3')" oncontextmenu="handleRightClick(event, 'cell_2_3')"></td>
+                        <td id="cell_2_4" class="hidden" onclick="handleLeftClick('cell_2_4')" oncontextmenu="handleRightClick(event, 'cell_2_4')"></td>
+                        <td id="cell_2_5" class="hidden" onclick="handleLeftClick('cell_2_5')" oncontextmenu="handleRightClick(event, 'cell_2_5')"></td>
+                        <td id="cell_2_6" class="hidden" onclick="handleLeftClick('cell_2_6')" oncontextmenu="handleRightClick(event, 'cell_2_6')"></td>
+                    </tr>
+                    <tr>
+                        <td id="cell_3_0" class="hidden" onclick="handleLeftClick('cell_3_0')" oncontextmenu="handleRightClick(event, 'cell_3_0')"></td>
+                        <td id="cell_3_1" class="hidden" onclick="handleLeftClick('cell_3_1')" oncontextmenu="handleRightClick(event, 'cell_3_1')"></td>
+                        <td id="cell_3_2" class="hidden" onclick="handleLeftClick('cell_3_2')" oncontextmenu="handleRightClick(event, 'cell_3_2')"></td>
+                        <td id="cell_3_3" class="hidden" onclick="handleLeftClick('cell_3_3')" oncontextmenu="handleRightClick(event, 'cell_3_3')"></td>
+                        <td id="cell_3_4" class="hidden" onclick="handleLeftClick('cell_3_4')" oncontextmenu="handleRightClick(event, 'cell_3_4')"></td>
+                        <td id="cell_3_5" class="hidden" onclick="handleLeftClick('cell_3_5')" oncontextmenu="handleRightClick(event, 'cell_3_5')"></td>
+                        <td id="cell_3_6" class="hidden" onclick="handleLeftClick('cell_3_6')" oncontextmenu="handleRightClick(event, 'cell_3_6')"></td>
+                    </tr>
+                    <tr>
+                        <td id="cell_4_0" class="hidden" onclick="handleLeftClick('cell_4_0')" oncontextmenu="handleRightClick(event, 'cell_4_0')"></td>
+                        <td id="cell_4_1" class="hidden" onclick="handleLeftClick('cell_4_1')" oncontextmenu="handleRightClick(event, 'cell_4_1')"></td>
+                        <td id="cell_4_2" class="hidden" onclick="handleLeftClick('cell_4_2')" oncontextmenu="handleRightClick(event, 'cell_4_2')"></td>
+                        <td id="cell_4_3" class="hidden" onclick="handleLeftClick('cell_4_3')" oncontextmenu="handleRightClick(event, 'cell_4_3')"></td>
+                        <td id="cell_4_4" class="hidden" onclick="handleLeftClick('cell_4_4')" oncontextmenu="handleRightClick(event, 'cell_4_4')"></td>
+                        <td id="cell_4_5" class="hidden" onclick="handleLeftClick('cell_4_5')" oncontextmenu="handleRightClick(event, 'cell_4_5')"></td>
+                        <td id="cell_4_6" class="hidden" onclick="handleLeftClick('cell_4_6')" oncontextmenu="handleRightClick(event, 'cell_4_6')"></td>
+                    </tr>
+                    <tr>
+                        <td id="cell_5_0" class="hidden" onclick="handleLeftClick('cell_5_0')" oncontextmenu="handleRightClick(event, 'cell_5_0')"></td>
+                        <td id="cell_5_1" class="hidden" onclick="handleLeftClick('cell_5_1')" oncontextmenu="handleRightClick(event, 'cell_5_1')"></td>
+                        <td id="cell_5_2" class="hidden" onclick="handleLeftClick('cell_5_2')" oncontextmenu="handleRightClick(event, 'cell_5_2')"></td>
+                        <td id="cell_5_3" class="hidden" onclick="handleLeftClick('cell_5_3')" oncontextmenu="handleRightClick(event, 'cell_5_3')"></td>
+                        <td id="cell_5_4" class="hidden" onclick="handleLeftClick('cell_5_4')" oncontextmenu="handleRightClick(event, 'cell_5_4')"></td>
+                        <td id="cell_5_5" class="hidden" onclick="handleLeftClick('cell_5_5')" oncontextmenu="handleRightClick(event, 'cell_5_5')"></td>
+                        <td id="cell_5_6" class="hidden" onclick="handleLeftClick('cell_5_6')" oncontextmenu="handleRightClick(event, 'cell_5_6')"></td>
+                    </tr>
+                    <tr>
+                        <td id="cell_6_0" class="hidden" onclick="handleLeftClick('cell_6_0')" oncontextmenu="handleRightClick(event, 'cell_6_0')"></td>
+                        <td id="cell_6_1" class="hidden" onclick="handleLeftClick('cell_6_1')" oncontextmenu="handleRightClick(event, 'cell_6_1')"></td>
+                        <td id="cell_6_2" class="hidden" onclick="handleLeftClick('cell_6_2')" oncontextmenu="handleRightClick(event, 'cell_6_2')"></td>
+                        <td id="cell_6_3" class="hidden" onclick="handleLeftClick('cell_6_3')" oncontextmenu="handleRightClick(event, 'cell_6_3')"></td>
+                        <td id="cell_6_4" class="hidden" onclick="handleLeftClick('cell_6_4')" oncontextmenu="handleRightClick(event, 'cell_6_4')"></td>
+                        <td id="cell_6_5" class="hidden" onclick="handleLeftClick('cell_6_5')" oncontextmenu="handleRightClick(event, 'cell_6_5')"></td>
+                        <td id="cell_6_6" class="hidden" onclick="handleLeftClick('cell_6_6')" oncontextmenu="handleRightClick(event, 'cell_6_6')"></td>
+                    </tr>
+                </table>
+        </div>
+        <script type="text/javascript">
+            function handleLeftClick(cellID) {
+                sendClickToServer(cellID, "TRY");
+            }
+            function handleRightClick(event, cellID) {
+                event.preventDefault();
+                sendClickToServer(cellID, "FLAG");
+            }
+            function sendClickToServer(cellId, actionType) {
+                var data = { cellId: cellId, actionType: actionType };
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", "/play.html", true);
+                xhr.setRequestHeader("Content-Type", "application/json");
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
+                        console.log('Server response:', xhr.responseText);
+                    } else {
+                        console.log('Error sending data to server');
+                    }
+                };
+                xhr.send(JSON.stringify(data));
+            }
+        </script>
+    </body>
+</html>

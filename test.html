@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Minesweeper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2em;
+            color: #333;
+            margin-top: 20px;
+        }
+        .minesweeper {
+            margin: 0 auto;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .minesweeper td {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #ccc;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+        .hidden {
+            background-color: #999;
+        }
+        .revealed {
+            background-color: #ddd;
+        }
+        .flag {
+            background-color: #f0f0f0;
+        }
+        .mine {
+            background-color: #f00;
+        }
+    </style>
+</head>
+<body>
+    <h1>Minesweeper</h1>
+    <table class="minesweeper">
+        <tr>
+            <td id="cell_0_0" class="hidden" onclick="handleLeftClick('cell_0_0')" oncontextmenu="handleRightClick(event, 'cell_0_0')"></td>
+            <td id="cell_0_1" class="hidden" onclick="handleLeftClick('cell_0_1')" oncontextmenu="handleRightClick(event, 'cell_0_1')"></td>
+            <td id="cell_0_2" class="hidden" onclick="handleLeftClick('cell_0_2')" oncontextmenu="handleRightClick(event, 'cell_0_2')"></td>
+        </tr>
+        <tr>
+            <td id="cell_1_0" class="hidden" onclick="handleLeftClick('cell_1_0')" oncontextmenu="handleRightClick(event, 'cell_1_0')"></td>
+            <td id="cell_1_1" class="hidden" onclick="handleLeftClick('cell_1_1')" oncontextmenu="handleRightClick(event, 'cell_1_1')"></td>
+            <td id="cell_1_2" class="hidden" onclick="handleLeftClick('cell_1_2')" oncontextmenu="handleRightClick(event, 'cell_1_2')"></td>
+        </tr>
+    </table>
+    <script>
+        function handleLeftClick(cellID) {
+            sendClickToServer(cellID, "TRY");
+        }
+
+        function handleRightClick(event, cellID) {
+            event.preventDefault();
+            sendClickToServer(cellID, "FLAG");
+        }
+
+        function sendClickToServer(cellId, actionType) {
+            var data = {
+                cellId: cellId,
+                actionType: actionType
+            };
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/your-server-endpoint", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    console.log("Response from server:", xhr.responseText);
+                } else {
+                    console.error("Error sending data to server");
+                }
+            };
+            xhr.send(JSON.stringify(data));
+        }
+    </script>
+</body>
+</html>
