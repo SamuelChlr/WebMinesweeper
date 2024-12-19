@@ -17,33 +17,9 @@ public class MinesweeperHTML{
     public MinesweeperHTML(){
         htmlcode = "";
     }
-    //generate the html code without
-    /*public void generateHTML(PrintWriter serverWriter, boolean acceptGZIP) throws IOException
-	{
-		byte byteArray[];
-		String htmlCode,tmp;
-
-		
-		
-		if(acceptGZIP)
-		{
-			htmlCode = getHeaders() + getTile() + getFooter();
-			byteArray = compress(htmlCode);
-			chunkEncodingGZIP(byteArray,serverWriter);
-			serverWriter.flush();
-		}
-		else
-		{
-			htmlCode = getHeaders() + getTile() + getFooter();
-			chunckEncoding(htmlCode,serverWriter);
-			serverWriter.flush();
-		}
-		
-		
-
-	} */
-    //generate the html code for a post avec JS
-    public void generateHTML(OutputStream serverWriter, Session session, boolean acceptGZIP) throws IOException
+    
+    //generate the html code 
+    public void generateHTML(OutputStream serverWriter, Session session, boolean NewSession) throws IOException
 	{
 		byte byteArray[];
 		String htmlCode,tmp;
@@ -53,20 +29,31 @@ public class MinesweeperHTML{
 		
 			System.out.println("debut generation");
 			htmlCode = getHeaders() + getBody(username);
-			sendContentWithContentLength(serverWriter, htmlCode);
+			if(NewSession)
+				sendContentWithContentLength(serverWriter, htmlCode,session.getSessionId());
+			else
+			sendContentWithContentLength(serverWriter, htmlCode,"");
 			System.out.println("fin envoie");
-			
-		
-		
-		
+
 	}
 
-	private void sendContentWithContentLength(OutputStream outputStream, String content) throws IOException {
+	private void sendContentWithContentLength(OutputStream outputStream, String content, String sessionId) throws IOException {
 		byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
-		String headers = "HTTP/1.1 200 OK\r\n" +
-						 "Content-Type: text/html; charset=UTF-8\r\n" +
-						 "Content-Length: " + contentBytes.length + "\r\n" +
-						 "Connection: close\r\n\r\n";
+		String headers;
+		if(sessionId == ""){
+			headers = "HTTP/1.1 200 OK\r\n" +
+							"Content-Type: text/html; charset=UTF-8\r\n" +
+							"Content-Length: " + contentBytes.length + "\r\n" +
+							"Connection: close\r\n\r\n";
+		}
+		else
+		{
+			 headers = "HTTP/1.1 200 OK\r\n" +
+							"Content-Type: text/html; charset=UTF-8\r\n" +
+							"Set-Cookie: SESSID=" + sessionId + "; Path=/; Max-Age=600\r\n" +
+							"Content-Length: " + contentBytes.length + "\r\n" +
+							"Connection: close\r\n\r\n";
+		}
 	
 		outputStream.write(headers.getBytes(StandardCharsets.UTF_8));
 		outputStream.write(contentBytes);
@@ -147,19 +134,17 @@ public class MinesweeperHTML{
 		StringBuilder tableHtml = new StringBuilder();
 		tableHtml.append("        <table class=\"minesweeper\">\n");
 		
-		// Génération des lignes et colonnes
 		for (int row = 0; row < 7; row++) {
 			tableHtml.append("            <tr>\n");
 			for (int col = 0; col < 7; col++) {
-				int index = row * 7 + col; // Calcul de l'index dans la liste linéaire
 				tableHtml.append("                <td data-x=\"")
 						 .append(row)
 						 .append("\" data-y=\"")
 						 .append(col)
 						 .append("\" class=\"hidden\" onclick=\"handleLeftClick('")
-						 .append(index)
+						 .append(row).append("_").append(col)
 						 .append("')\" oncontextmenu=\"handleRightClick(event, '")
-						 .append(index)
+						 .append(row).append("_").append(col)
 						 .append("')\"></td>\n");
 			}
 			tableHtml.append("            </tr>\n");
@@ -169,61 +154,94 @@ public class MinesweeperHTML{
 		return tableHtml.toString();
 	}
 	
-
+	
 	public String getScript() {
 		String bombBase64 = convertImageToBase64("bomb.png");
-		String flagBase64 = convertImageToBase64("flag.png");	
-
+		String flagBase64 = convertImageToBase64("flag.png");
+	
 		return "        <script type=\"text/javascript\">\n"
-			+ "			   const bombImageBase64 = \"data:image/png;base64," + bombBase64 +"\";\n"
-			+ "            const flagImageBase64 = \"data:image/png;base64," + flagBase64 +"\";\n"
-			+ "            const socket = new WebSocket(\"ws://\" + window.location.host);\n"
-			+ "            const chatDiv = document.getElementById(\"chat\");\n"
-			+ "\n"
-			+ "            socket.onmessage = (event) => {\n"
-			+ "                const rows = event.data.split(\"\\n\");\n"
-			+ "                rows.forEach((row, x) => {\n"
-			+ "                    row.split(\"\").forEach((cellContent, y) => {\n"
-			+ "                        const cell = document.querySelector(`[data-x='${x}'][data-y='${y}']`);\n"
-			+ "                        if (cell) {\n"
-			+ "                            if (cellContent === \"H\") {\n"
-			+ "                                cell.className = \"hidden\";\n"
-			+ "                                cell.textContent = \"\";\n"
-			+ "                            } else if (cellContent === \"F\") {\n"
-			+ "                                cell.className = \"flag\";\n"
-			+ "                                cell.style.backgroundImage = `url(${flagImageBase64})`;\n"
-			+ "                                cell.style.backgroundSize = \"cover\";\n"
-			+ "                            } else if (cellContent === \"B\") {\n"
-			+ "                                cell.className = \"mine\";\n"
-			+ "                                cell.style.backgroundImage = `url(${bombImageBase64})`;\n"
-			+ "                                cell.style.backgroundSize = \"cover\";\n"
-			+ "                            } else {\n"
-			+ "                                cell.className = \"revealed\";\n"
-			+ "                                cell.textContent = cellContent;\n"
-			+ "                            }\n"
-			+ "                        }\n"
-			+ "                    });\n"
-			+ "                });\n"
-			+ "            };\n"
-			+ "\n"
-			+ "            socket.onopen = () => {\n"
-			+ "                const p = document.createElement(\"p\");\n"
-			+ "                p.textContent = \"WebSocket connected.\";\n"
-			+ "                chatDiv.appendChild(p);\n"
-			+ "            };\n"
-			+ "\n"
-			+ "            function handleLeftClick(cellID) {\n"
-			+ "                const [x, y] = cellID.split(\"_\").slice(1).map(Number);\n"
-			+ "                socket.send(`TRY:${x},${y}`);\n"
-			+ "            }\n"
-			+ "\n"
-			+ "            function handleRightClick(event, cellID) {\n"
-			+ "                event.preventDefault();\n"
-			+ "                const [x, y] = cellID.split(\"_\").slice(1).map(Number);\n"
-			+ "                socket.send(`FLAG:${x},${y}`);\n"
-			+ "            }\n"
-			+ "        </script>\n";
+			 + "            const bombImageBase64 = \"data:image/png;base64," + bombBase64 + "\";\n"
+			 + "            const flagImageBase64 = \"data:image/png;base64," + flagBase64 + "\";\n"
+			 + "            const socket = new WebSocket(\"ws://\" + window.location.host + \"/ws\");\n"
+			 + "\n"
+			 + "            socket.onmessage = (event) => {\n"
+			 + "                console.log(\"Message received from server:\", event.data);\n"
+			 + "                const rows = event.data.split(\"\\n\");\n"
+			 + "\n"
+			 + "                rows.forEach((row, x) => {\n"
+			 + "                    row.split(\"\").forEach((cellContent, y) => {\n"
+			 + "                        const cell = document.querySelector(`[data-x='${x}'][data-y='${y}']`);\n"
+			 + "                        if (cell) {\n"
+			 + "                            const value = cellContent.charAt(0); // Valeur de la cellule ('B', chiffre, ou autre)\n"
+			 + "                            const status = cellContent.charAt(1); // État de la cellule ('H', 'S', 'F')\n"
+			 + "\n"
+			 + "                            if (status === \"H\") {\n"
+			 + "                                cell.className = \"hidden\";\n"
+			 + "                                cell.style.backgroundImage = \"\";\n"
+			 + "                                cell.textContent = \"\";\n"
+			 + "                            } else if (status === \"F\") {\n"
+			 + "                                cell.className = \"flag\";\n"
+			 + "                                cell.style.backgroundImage = `url(${flagBase64})`;\n"
+			 + "                                cell.style.backgroundSize = \"cover\";\n"
+			 + "                                cell.textContent = \"\";\n"
+			 + "                            } else if (status === \"S\") {\n"
+			 + "                                if (value === \"B\") {\n"
+			 + "                                    cell.className = \"mine\";\n"
+			 + "                                    cell.style.backgroundImage = `url(${bombBase64})`;\n"
+			 + "                                    cell.style.backgroundSize = \"cover\";\n"
+			 + "                                    cell.textContent = \"\";\n"
+			 + "                                } else {\n"
+			 + "                                    cell.className = \"revealed\";\n"
+			 + "                                    cell.textContent = value;\n"
+			 + "                                    cell.style.backgroundImage = \"\";\n"
+			 + "                                }\n"
+			 + "                            }\n"
+			 + "                        } else {\n"
+			 + "                            console.warn(`Cell not found for x=${x}, y=${y}`);\n"
+			 + "                        }\n"
+			 + "                    });\n"
+			 + "                });\n"
+			 + "            };\n"
+			 + "\n"
+			 + "            socket.onopen = () => {\n"
+			 + "                console.log(\"WebSocket connected.\");\n"
+			 + "            };\n"
+			 + "\n"
+			 + "            socket.onerror = (error) => {\n"
+			 + "                console.error(\"WebSocket error:\", error);\n"
+			 + "            };\n"
+			 + "\n"
+			 + "            socket.onclose = () => {\n"
+			 + "                console.warn(\"WebSocket connection closed.\");\n"
+			 + "            };\n"
+			 + "\n"
+			 + "            function handleLeftClick(cellID) {\n"
+			 + "                if (socket.readyState === WebSocket.OPEN) {\n"
+			 + "                    const [x, y] = cellID.split(\"_\").map(Number);\n"
+			 + "                    console.log(`Sending TRY for x=${x}, y=${y}`);\n"
+			 + "                    socket.send(`TRY:${x},${y}`);\n"
+			 + "                } else {\n"
+			 + "                    console.error(\"WebSocket is not open. Cannot send TRY message.\");\n"
+			 + "                }\n"
+			 + "            }\n"
+			 + "\n"
+			 + "            function handleRightClick(event, cellID) {\n"
+			 + "                event.preventDefault();\n"
+			 + "                if (socket.readyState === WebSocket.OPEN) {\n"
+			 + "                    const [x, y] = cellID.split(\"_\").map(Number);\n"
+			 + "                    console.log(`Sending FLAG for x=${x}, y=${y}`);\n"
+			 + "                    socket.send(`FLAG:${x},${y}`);\n"
+			 + "                } else {\n"
+			 + "                    console.error(\"WebSocket is not open. Cannot send FLAG message.\");\n"
+			 + "                }\n"
+			 + "            }\n"
+			 + "        </script>\n";
 	}
+	
+	
+	
+	
+	
 	
 
 	

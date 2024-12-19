@@ -132,7 +132,7 @@ public class ThreadWorker extends Thread {
         String sessionId = readCookies(request, "SESSID");
         Session session;
         Boolean NewSession = false;
-        System.out.println("je suis dans le GET : " + sessionId);
+        
 
         if(sessionId == null || !SessionManager.sessionExists(sessionId)) { // on vérifie s'il y a une session déjà connue 
             //si elle n'existe pas on en crée une
@@ -145,45 +145,29 @@ public class ThreadWorker extends Thread {
             session = SessionManager.getSession(sessionId);
             System.out.println("Session en cours, SESSID: " + sessionId);
         }
-        System.out.println("test 1");
+
+        
         session.getDuration(); // mettre à jour la durée
-        System.out.println("TEST 2");
+        
         if( request.contains("GET / ")){
-            System.out.println("TEST 3");
+            
             Redirection();
         }
         else if(request.startsWith("GET /play.html"))
         {
+        
             
-            System.out.println("requete GET vers play.html");
-            //renvoyer la page html de play (idealement avec chunk)
             
-            Boolean acceptGZIP = request.contains("Accept-Encoding: gzip");
-            /*if(NewSession){
-                String headers = "HTTP/1.1 200 OK\r\n" +
-                            "Connection: close\r\n" +
-                            "Content-Type: text/html; charset=UTF-8\r\n" +
-                            "Set-Cookie: SESSID=" + sessionId + "; Path=/; Max-Age=600\r\n" +
-                            "Transfer-Encoding: chunked\r\n\r\n";
-                responStream.write(headers);
-            }
-            else {
-                String headers = "HTTP/1.1 200 OK\r\n" +
-                            "Connection: close\r\n" +
-                            "Content-Type: text/html; charset=UTF-8\r\n" +
-                            "Transfer-Encoding: chunked\r\n\r\n";
-                responStream.write(headers);
-            }
-            responStream.flush();*/
-            htmlGenerator.generateHTML(socket.getOutputStream(),session, acceptGZIP);
+            responStream.flush();
+            htmlGenerator.generateHTML(socket.getOutputStream(),session, NewSession);
         }
         else if(request.contains("/leaderboard.html"))
         {
             //envoyer la page html du leaderboard (idealement avec chunk)
-            System.out.println("TEST 4");
+            
         }
         else {
-            System.out.println("TEST 5");
+            
             sendError(404, "Not Found");
         }
     }
@@ -245,7 +229,7 @@ public class ThreadWorker extends Thread {
     /********************** WEBSOCKET 
          * @throws NoSuchAlgorithmException *********************************/
     
-        private void requestWithWebsocket(String request1) throws IOException, NoSuchAlgorithmException{
+    private void requestWithWebsocket(String request1) throws IOException, NoSuchAlgorithmException{
         WebSocket webSocket = new WebSocket(socket);
 
         WebSocketHanshake(request1);
@@ -288,7 +272,7 @@ public class ThreadWorker extends Thread {
 
         //on recherche la clé du client 
         for(String line : request.split("\r\n")){
-            if(line.startsWith("Sec-WebSocket-key:")){
+            if(line.startsWith("Sec-WebSocket-Key:")){
                 webSocketKeyClient = line.substring(19).trim();
                 break;
             }
@@ -327,20 +311,32 @@ public class ThreadWorker extends Thread {
 
     }
 
-    private String TRY(String request, Session session){
-
-        ProtocolMP MP = new ProtocolMP(session);
-        String[] parts = request.split(":");
-        String[] position = parts[1].split(",");
-        int result = MP.TryWS(Integer.parseInt(position[0]), Integer.parseInt(position[0]));
-        if(result == 1)
-             return "GAME LOST";
-        else if(result == 2)
-            return "GAME WIN";
-        else
-            return formatGrid(session.getGameState());
-        
+    private String TRY(String request, Session session) {
+        try {
+            System.out.println("TRY request received: " + request); // Debug
+            ProtocolMP MP = new ProtocolMP(session);
+            String[] parts = request.split(":");
+            String[] position = parts[1].split(",");
+            int x = Integer.parseInt(position[0]);
+            int y = Integer.parseInt(position[1]);
+    
+            int result = MP.TryWS(x, y); // Résultat du clic
+            if (result == 1) {
+                System.out.println("Game lost");
+                return "GAME LOST";
+            } else if (result == 2) {
+                System.out.println("Game won");
+                return "GAME WIN";
+            } else {
+                System.out.println("Game continues");
+                return formatGrid(session.getGameState());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error processing TRY command: " + e.getMessage();
+        }
     }
+    
 
     private String FLAG(String request, Session session) {
         ProtocolMP MP = new ProtocolMP(session);

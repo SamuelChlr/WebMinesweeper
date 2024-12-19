@@ -31,6 +31,7 @@ public class ProtocolMP{
         else if(game.get(choice)[1] != 'S'){
 
             if(value == '0'){
+                game.get(choice)[1] = 'S';
                 revealZeroCell(game, x, y);
                 session.setGameState(game);
                 if(session.getUnrevealedCell() <= 7)
@@ -73,86 +74,57 @@ public class ProtocolMP{
             session.setGameState(game);
     }
 
-
-    private void Initialisation(int choice){
-
-        try{
+    private void Initialisation(int choice) {
+        try {
             List<char[]> game = new ArrayList<>();
-
-            //initialisation of the game
-            char[] emplacement;
-            //generation of the bomb
+    
+            // Initialisation du jeu : créer un tableau de 49 cellules
+            for (int i = 0; i < 49; i++) {
+                game.add(new char[]{'0', 'H'}); // Par défaut, chaque case est vide ('0') et cachée ('H')
+            }
+    
+            // Génération des bombes
             Random random = new Random();
-            int i = 0, nombre, BombNumber;
-            while (i<7) {
-                nombre = random.nextInt(49);
-
-                //we  put the bomb on the game board
-                if(nombre != choice && game.get(nombre)[0] != 'B'){
-                    emplacement = game.get(nombre);
-                    emplacement[0] = 'B';
+            int i = 0;
+            while (i < 7) { // 7 bombes
+                int nombre = random.nextInt(49);
+                if (nombre != choice && game.get(nombre)[0] != 'B') {
+                    game.get(nombre)[0] = 'B'; // Placer une bombe
                     i++;
-
                 }
             }
-            //we put the right number of every emplacement
-
-            for(int j = 0; j<49; j++)
-            {
-                emplacement = game.get(j);
-                BombNumber = 0;
-
-                if(emplacement[0] != 'B')
-                {
-                    //we check if there is a bomb up of the emplacement
-
-                    //we check up
-                    if(j>6 && game.get(j-7)[0] == 'B')
-                        BombNumber++;
-                        
-                    //we check up right
-                    if((j%7+1) !=7 && j>6 && game.get(j-6)[0] == 'B')
-                        BombNumber++;
-                    //we check up left
-                    if(j>7 && (j%7) != 0 && game.get(j-8)[0] == 'B')
-                        BombNumber++;
-
-                    //we check left
-                    if((j%7) != 0 && game.get(j-1)[0] == 'B' )
-                        BombNumber++;
-
-                    //we check right
-                    if((j%7+1) != 7 && game.get(j+1)[0] == 'B')
-                        BombNumber++;
-
-                    //we check down left
-                    if(j < 42 && (j%7) != 0  && game.get(j+6)[0] == 'B')
-                        BombNumber++;
-
-                    //we check down
-                    if(j<42 && game.get(j+7)[0] == 'B')
-                        BombNumber++;
-
-                    //we check down right
-                    if(j<41 && (j%7+1) != 7 && game.get(j+8)[0] == 'B')
-                        BombNumber++;
-
-                    //we put the right value in the emplacement 
-                    if(BombNumber != 0)
-                    {
-                        game.get(j)[0] = (char)(BombNumber + '0');
+    
+            // Mise à jour des cellules adjacentes aux bombes
+            for (int j = 0; j < 49; j++) {
+                char[] emplacement = game.get(j);
+                int BombNumber = 0;
+    
+                if (emplacement[0] != 'B') { // Si ce n'est pas une bombe
+                    // Vérifier les cases adjacentes
+                    if (j > 6 && game.get(j - 7)[0] == 'B') BombNumber++; // Haut
+                    if (j > 6 && j % 7 < 6 && game.get(j - 6)[0] == 'B') BombNumber++; // Haut droite
+                    if (j > 6 && j % 7 > 0 && game.get(j - 8)[0] == 'B') BombNumber++; // Haut gauche
+                    if (j % 7 > 0 && game.get(j - 1)[0] == 'B') BombNumber++; // Gauche
+                    if (j % 7 < 6 && game.get(j + 1)[0] == 'B') BombNumber++; // Droite
+                    if (j < 42 && j % 7 > 0 && game.get(j + 6)[0] == 'B') BombNumber++; // Bas gauche
+                    if (j < 42 && game.get(j + 7)[0] == 'B') BombNumber++; // Bas
+                    if (j < 42 && j % 7 < 6 && game.get(j + 8)[0] == 'B') BombNumber++; // Bas droite
+    
+                    if (BombNumber > 0) {
+                        emplacement[0] = (char) ('0' + BombNumber); // Mettre le nombre de bombes adjacentes
                     }
                 }
             }
-
+    
+            // Enregistrer l'état du jeu dans la session
             session.setGameState(game);
-
-
-        }
-        catch(Exception e){
+    
+        } catch (Exception e) {
             System.err.println("Error Try WS Init: " + e);
         }
     }
+    
+   
 
     public void revealZeroCell(List<char[]> game, int line, int row){
         
