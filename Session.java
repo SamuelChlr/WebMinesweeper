@@ -37,7 +37,7 @@ public class Session {
         this.playerName = playerName;
     }
 
-    public List<char[]> getGameState() {
+    public  List<char[]> getGameState() {
         return gameState;
     }
 

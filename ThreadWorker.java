@@ -197,12 +197,7 @@ public class ThreadWorker extends Thread {
         String Body = "";
         if(requestParts.length > 1)
             Body = requestParts[1];
-        /* 
-         else {
-            // Lire le corps si non inclus dans "request" (requis si le header arrive séparément)
-            body = readRequestBody(reader, header);
-        }
-        */
+        //else erreur !!!!
 
         System.out.println("Header :" + Header);
         System.out.println("Body :" + Body);
@@ -333,11 +328,21 @@ public class ThreadWorker extends Thread {
     }
 
     private String TRY(String request, Session session){
+
+        ProtocolMP MP = new ProtocolMP(session);
+        String[] parts = request.split(":");
+        String[] position = parts[1].split(",");
+        int result = MP.TryWS(Integer.parseInt(position[0]), Integer.parseInt(position[0]));
         return "";
     }
 
     private String FLAG(String request, Session session) {
+        ProtocolMP MP = new ProtocolMP(session);
+        String[] parts = request.split(":");
+        String[] position = parts[1].split(",");
+        MP.FlagWS(Integer.parseInt(position[0]), Integer.parseInt(position[0]));
         return "";
+        
     }
 
 
