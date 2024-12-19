@@ -53,13 +53,26 @@ public class MinesweeperHTML{
 		
 			System.out.println("debut generation");
 			htmlCode = getHeaders() + getBody(username);
-			sendChunkedResponse(serverWriter, htmlCode);
+			sendContentWithContentLength(serverWriter, htmlCode);
 			System.out.println("fin envoie");
 			
 		
 		
 		
 	}
+
+	private void sendContentWithContentLength(OutputStream outputStream, String content) throws IOException {
+		byte[] contentBytes = content.getBytes(StandardCharsets.UTF_8);
+		String headers = "HTTP/1.1 200 OK\r\n" +
+						 "Content-Type: text/html; charset=UTF-8\r\n" +
+						 "Content-Length: " + contentBytes.length + "\r\n" +
+						 "Connection: close\r\n\r\n";
+	
+		outputStream.write(headers.getBytes(StandardCharsets.UTF_8));
+		outputStream.write(contentBytes);
+		outputStream.flush();
+	}
+	
 	
 
 	private void sendChunkedResponse(OutputStream outputStream, String content) throws IOException {
@@ -131,59 +144,87 @@ public class MinesweeperHTML{
 	}
 
 	public String generateTable() {
-		StringBuilder tableBuilder = new StringBuilder();
-	
-		// Début de la table
-		tableBuilder.append("\t\t\t\t<table class=\"minesweeper\">\n");
-	
+		StringBuilder tableHtml = new StringBuilder();
+		tableHtml.append("        <table class=\"minesweeper\">\n");
+		
+		// Génération des lignes et colonnes
 		for (int row = 0; row < 7; row++) {
-			tableBuilder.append("\t\t\t\t\t<tr>\n");
+			tableHtml.append("            <tr>\n");
 			for (int col = 0; col < 7; col++) {
-				String cellId = "cell_" + row + "_" + col;
-				tableBuilder.append("\t\t\t\t\t\t<td id=\"")
-							.append(cellId)
-							.append("\" class=\"hidden\" ")
-							.append("onclick=\"handleLeftClick('")
-							.append(cellId)
-							.append("')\" ")
-							.append("oncontextmenu=\"handleRightClick(event, '")
-							.append(cellId)
-							.append("')\"></td>\n");
+				int index = row * 7 + col; // Calcul de l'index dans la liste linéaire
+				tableHtml.append("                <td data-x=\"")
+						 .append(row)
+						 .append("\" data-y=\"")
+						 .append(col)
+						 .append("\" class=\"hidden\" onclick=\"handleLeftClick('")
+						 .append(index)
+						 .append("')\" oncontextmenu=\"handleRightClick(event, '")
+						 .append(index)
+						 .append("')\"></td>\n");
 			}
-			tableBuilder.append("\t\t\t\t\t</tr>\n");
+			tableHtml.append("            </tr>\n");
 		}
 	
-		// Fin de la table
-		tableBuilder.append("\t\t\t\t</table>\n");
-	
-		return tableBuilder.toString();
+		tableHtml.append("        </table>\n");
+		return tableHtml.toString();
 	}
+	
 
 	public String getScript() {
-        return "        <script type=\"text/javascript\">\n"
-            + "            function handleLeftClick(cellID) {\n"
-            + "                sendClickToServer(cellID, \"TRY\");\n"
-            + "            }\n"
-            + "            function handleRightClick(event, cellID) {\n"
-            + "                event.preventDefault();\n"
-            + "                sendClickToServer(cellID, \"FLAG\");\n"
-            + "            }\n"
-            + "            function sendClickToServer(cellId, actionType) {\n"
-            + "                var data = { cellId: cellId, actionType: actionType };\n"
-            + "                var xhr = new XMLHttpRequest();\n"
-            + "                xhr.open(\"POST\", \"/play.html\", true);\n"
-            + "                xhr.setRequestHeader(\"Content-Type\", \"application/json\");\n"
-            + "                xhr.onload = function () {\n"
-            + "                    if (xhr.status === 200) {\n"
-            + "                        console.log('Server response:', xhr.responseText);\n"
-            + "                    } else {\n"
-            + "                        console.log('Error sending data to server');\n"
-            + "                    }\n"
-            + "                };\n"
-            + "                xhr.send(JSON.stringify(data));\n"
-            + "            }\n"
-            + "        </script>\n";
-    }
+		String bombBase64 = convertImageToBase64("bomb.png");
+		String flagBase64 = convertImageToBase64("flag.png");	
+
+		return "        <script type=\"text/javascript\">\n"
+			+ "			   const bombImageBase64 = \"data:image/png;base64," + bombBase64 +"\";\n"
+			+ "            const flagImageBase64 = \"data:image/png;base64," + flagBase64 +"\";\n"
+			+ "            const socket = new WebSocket(\"ws://\" + window.location.host);\n"
+			+ "            const chatDiv = document.getElementById(\"chat\");\n"
+			+ "\n"
+			+ "            socket.onmessage = (event) => {\n"
+			+ "                const rows = event.data.split(\"\\n\");\n"
+			+ "                rows.forEach((row, x) => {\n"
+			+ "                    row.split(\"\").forEach((cellContent, y) => {\n"
+			+ "                        const cell = document.querySelector(`[data-x='${x}'][data-y='${y}']`);\n"
+			+ "                        if (cell) {\n"
+			+ "                            if (cellContent === \"H\") {\n"
+			+ "                                cell.className = \"hidden\";\n"
+			+ "                                cell.textContent = \"\";\n"
+			+ "                            } else if (cellContent === \"F\") {\n"
+			+ "                                cell.className = \"flag\";\n"
+			+ "                                cell.style.backgroundImage = `url(${flagImageBase64})`;\n"
+			+ "                                cell.style.backgroundSize = \"cover\";\n"
+			+ "                            } else if (cellContent === \"B\") {\n"
+			+ "                                cell.className = \"mine\";\n"
+			+ "                                cell.style.backgroundImage = `url(${bombImageBase64})`;\n"
+			+ "                                cell.style.backgroundSize = \"cover\";\n"
+			+ "                            } else {\n"
+			+ "                                cell.className = \"revealed\";\n"
+			+ "                                cell.textContent = cellContent;\n"
+			+ "                            }\n"
+			+ "                        }\n"
+			+ "                    });\n"
+			+ "                });\n"
+			+ "            };\n"
+			+ "\n"
+			+ "            socket.onopen = () => {\n"
+			+ "                const p = document.createElement(\"p\");\n"
+			+ "                p.textContent = \"WebSocket connected.\";\n"
+			+ "                chatDiv.appendChild(p);\n"
+			+ "            };\n"
+			+ "\n"
+			+ "            function handleLeftClick(cellID) {\n"
+			+ "                const [x, y] = cellID.split(\"_\").slice(1).map(Number);\n"
+			+ "                socket.send(`TRY:${x},${y}`);\n"
+			+ "            }\n"
+			+ "\n"
+			+ "            function handleRightClick(event, cellID) {\n"
+			+ "                event.preventDefault();\n"
+			+ "                const [x, y] = cellID.split(\"_\").slice(1).map(Number);\n"
+			+ "                socket.send(`FLAG:${x},${y}`);\n"
+			+ "            }\n"
+			+ "        </script>\n";
+	}
+	
 
 	
 

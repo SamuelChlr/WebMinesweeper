@@ -38,16 +38,16 @@ public class ThreadWorker extends Thread {
             System.out.println(request);
 
             //on verifie quel type de requête c'est
-            if(request.startsWith("GET"))
+            if(request.contains("Upgrade: websocket")){
+                requestWithWebsocket(request);
+            }
+            else if(request.startsWith("GET"))
             {
                 requestGET(request,htmlGenerator);
             } 
             else if(request.startsWith("POST")) {
                 System.out.println("debut POST");
                 requestPOST(request);
-            }
-            else if(request.contains("Upgrade: websocket")){
-                requestWithWebsocket(request);
             }
             else{
                 sendError(405, "Method Not Allowed");
@@ -159,7 +159,7 @@ public class ThreadWorker extends Thread {
             //renvoyer la page html de play (idealement avec chunk)
             
             Boolean acceptGZIP = request.contains("Accept-Encoding: gzip");
-            if(NewSession){
+            /*if(NewSession){
                 String headers = "HTTP/1.1 200 OK\r\n" +
                             "Connection: close\r\n" +
                             "Content-Type: text/html; charset=UTF-8\r\n" +
@@ -174,7 +174,7 @@ public class ThreadWorker extends Thread {
                             "Transfer-Encoding: chunked\r\n\r\n";
                 responStream.write(headers);
             }
-            responStream.flush();
+            responStream.flush();*/
             htmlGenerator.generateHTML(socket.getOutputStream(),session, acceptGZIP);
         }
         else if(request.contains("/leaderboard.html"))
@@ -257,7 +257,7 @@ public class ThreadWorker extends Thread {
         if (sessionId == null || !SessionManager.sessionExists(sessionId)) {
             sessionId = SessionManager.createSession();
             session = SessionManager.getSession(sessionId);
-            sendCookie(sessionId);
+            //sendCookie(sessionId);
             System.out.println("Nouvelle session créée : " + sessionId);
         } else {
             session = SessionManager.getSession(sessionId);
@@ -333,7 +333,13 @@ public class ThreadWorker extends Thread {
         String[] parts = request.split(":");
         String[] position = parts[1].split(",");
         int result = MP.TryWS(Integer.parseInt(position[0]), Integer.parseInt(position[0]));
-        return "";
+        if(result == 1)
+             return "GAME LOST";
+        else if(result == 2)
+            return "GAME WIN";
+        else
+            return formatGrid(session.getGameState());
+        
     }
 
     private String FLAG(String request, Session session) {
@@ -341,9 +347,37 @@ public class ThreadWorker extends Thread {
         String[] parts = request.split(":");
         String[] position = parts[1].split(",");
         MP.FlagWS(Integer.parseInt(position[0]), Integer.parseInt(position[0]));
-        return "";
+        return formatGrid(session.getGameState());
         
     }
+
+    private String formatGrid(List<char[]> grid) {
+        StringBuilder builder = new StringBuilder();
+        char[] flatGrid = grid.get(0); // Supposons que la grille est stockée comme une seule ligne dans le premier élément de la liste.
+    
+        for (int i = 0; i < flatGrid.length; i += 14) { // Parcours de la grille (chaque ligne contient 7 cases * 2 caractères par case)
+            for (int j = i; j < i + 14 && j < flatGrid.length; j += 2) { // Parcours des cases dans la ligne actuelle
+                char content = flatGrid[j];
+                char visibility = flatGrid[j + 1];
+    
+                if (visibility == 'H') {
+                    builder.append("#"); // Case cachée
+                } else if (visibility == 'F') {
+                    builder.append("F"); // Case marquée comme drapeau
+                } else if (visibility == 'S') {
+                    if (content == 'B') {
+                        builder.append("B"); // Bombe
+                    } else {
+                        builder.append(content); // Chiffre ou autre contenu affichable
+                    }
+                }
+            }
+            builder.append("\n"); // Nouvelle ligne pour chaque rangée de 7 cases
+        }
+    
+        return builder.toString().trim(); // Supprimer les espaces inutiles en fin de chaîne
+    }
+    
 
 
     /**
